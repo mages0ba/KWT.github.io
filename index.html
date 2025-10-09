@@ -77,65 +77,31 @@
             color: white;
             border-radius: 5px;
         }
-        
+      .commentInput{
+        margin: 20px 18px 15px 25px;
+        padding-bottom: 10px;
+        font-size: 13px;
+      }
         .comment-log {
             flex-grow: 1;
             margin-top: 20px;
-            width: 100%;
-            height: 100%;
             padding: 10px;
             background-color: #000;
             border: 1px solid #555;
             border-radius: 5px;
             overflow-y: auto;
-            box-sizing: border-box;
         }
-
         .comment-log p {
-            margin: 6px 10px 10px 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px dashed #444;
-            color: #ddd;
-            font-size: 14px;
-        }
+    margin: 10px 15px 10px 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #444;
+    color: #ddd;
+    font-size: 13px; /* 👈 이 줄을 추가하세요 */
+}
         .comment-log p:last-child { border-bottom: none; }
-
-        /* ‼️ [추가된 부분] 전체 화면 로딩 오버레이 스타일 */
-        .loading-overlay {
-            display: none; /* 평소에는 숨김 */
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            z-index: 9999;
-            /* Flexbox를 이용해 자식 요소(로더)를 중앙 정렬 */
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* ‼️ [수정된 부분] 로더 스타일 (크기 조정 및 위치 관련 속성 제거) */
-        .loader {
-            border: 5px solid #000;
-            border-top: 5px solid #4CAF50;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loader"></div>
-    </div>
-
     <div class="ui-container">
         <div class="game-info" id="gameInfo"></div>
         <div class="button-group">
@@ -148,7 +114,7 @@
     
     <div class="comment-room" id="commentRoom">
         <h2>LEAVE A COMMENT</h2>
-        <textarea id="commentInput" placeholder="your comment..."></textarea>
+        <textarea id="commentInput" placeholder="Your comment..."></textarea>
         <button id="submitCommentBtn">Submit</button>
         <div class="comment-log" id="commentLog">
         </div>
@@ -174,7 +140,7 @@
         const twitterColors = [ '#1DA1F2', '#14171A', '#657786', '#AAB8C2', '#E1E8ED', '#F5F8FA', '#FFAD1F' ];
         const DANGER_COLOR = '#E0245E';
         
-        // The URL has been changed below
+        // ‼️ [수정된 부분] 요청하신 URL로 변경되었습니다.
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzx3XcPg7vbkvh2SlgkecYOmK3V085rRdPWrep9Emq5Bb_e5O_214_oQRPX1sKSBsKWuw/exec";
 
         class Ball {
@@ -355,31 +321,24 @@
             initializeGame();
         }
         
-        // ‼️ [수정된 함수] 전체 화면 로딩 오버레이를 제어하도록 변경
         function loadComments() {
             const commentLog = select('#commentLog');
-            const loadingOverlay = select('#loadingOverlay');
-
-            commentLog.html(''); // 이전 댓글 지우기
-            loadingOverlay.style('display', 'flex'); // 로딩 화면 보이기
+            commentLog.html('loading...');
 
             fetch(WEB_APP_URL)
                 .then(response => response.json())
                 .then(data => {
-                    loadingOverlay.style('display', 'none'); // 로딩 완료 후 로딩 화면 숨기기
+                    commentLog.html('');
                     if (data.result === 'success' && data.comments) {
                         data.comments.forEach(commentText => {
                             let p = createP(commentText);
                             p.parent(commentLog);
                         });
                         commentLog.elt.scrollTop = commentLog.elt.scrollHeight;
-                    } else {
-                        commentLog.html('댓글이 없습니다.');
                     }
                 })
                 .catch(error => {
                     console.error("댓글 불러오기 실패:", error);
-                    loadingOverlay.style('display', 'none'); // 에러 발생 시에도 로딩 화면 숨기기
                     commentLog.html('댓글을 불러올 수 없습니다.');
                 });
         }
@@ -394,10 +353,8 @@
             }
 
             const submitBtn = select('#submitCommentBtn');
-            const loadingOverlay = select('#loadingOverlay');
             submitBtn.html('전송 중...');
             submitBtn.attribute('disabled', '');
-            loadingOverlay.style('display', 'flex'); // 전송 시작 시 로딩 화면 표시
 
             fetch(WEB_APP_URL, {
                 method: 'POST',
@@ -411,15 +368,11 @@
             .then(data => {
                 if(data.result === 'success') {
                     commentInput.value('');
-                    loadComments(); // 성공 시 댓글 목록을 다시 불러오면서 로딩 화면이 자연스럽게 이어짐
-                } else { 
-                    loadingOverlay.style('display', 'none'); // 실패 시 로딩 화면 숨김
-                    throw new Error('서버가 댓글 저장을 실패했습니다.'); 
-                }
+                    loadComments();
+                } else { throw new Error('서버가 댓글 저장을 실패했습니다.'); }
             })
             .catch(error => {
                 console.error('전송 실패:', error);
-                loadingOverlay.style('display', 'none'); // 실패 시 로딩 화면 숨김
                 alert('댓글 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
             })
             .finally(() => {
