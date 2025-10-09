@@ -134,7 +134,8 @@
         const twitterColors = [ '#1DA1F2', '#14171A', '#657786', '#AAB8C2', '#E1E8ED', '#F5F8FA', '#FFAD1F' ];
         const DANGER_COLOR = '#E0245E';
         
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1nlGG_l902zlKLtVExr0Y7ZkZNqCCGaqjulc1T7G20Ua_jaVSnSu6K0mBo5o8yPlxgA/exec";
+        // ‼️ [수정된 부분] 요청하신 URL로 변경되었습니다.
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxNYBQtEffVH1fh7pHiUfuPWHuedDKKmBnaCAu1Hd1HIkRLKbIHv8paJZPC03UHI3Prmw/exec";
 
         class Ball {
             constructor(i, j) {
@@ -263,7 +264,6 @@
             }
         }
         
-        // ‼️ [수정된 부분] loadComments 함수 호출 추가
         function setGameMode(mode) {
             const commentRoom = select('#commentRoom');
             const gameCanvas = select('canvas');
@@ -277,7 +277,7 @@
                 gameCanvas.style('display', 'none');
                 gameInfo.style('display', 'none');
                 noLoop();
-                loadComments(); // 코멘트 탭을 열 때 댓글 불러오기
+                loadComments();
             } else { 
                 commentRoom.style('display', 'none');
                 gameCanvas.style('display', 'block');
@@ -315,12 +315,11 @@
             initializeGame();
         }
         
-        // ‼️ [추가된 부분] 댓글 불러오기 함수
         function loadComments() {
             const commentLog = select('#commentLog');
             commentLog.html('불러오는 중...');
 
-            fetch(https://script.google.com/macros/s/AKfycbxNYBQtEffVH1fh7pHiUfuPWHuedDKKmBnaCAu1Hd1HIkRLKbIHv8paJZPC03UHI3Prmw/exec)
+            fetch(WEB_APP_URL)
                 .then(response => response.json())
                 .then(data => {
                     commentLog.html('');
@@ -362,12 +361,8 @@
             })
             .then(data => {
                 if(data.result === 'success') {
-                    // 성공 시 화면에 바로 추가하고 다시 불러오기
-                    let newCommentP = createP(commentText);
-                    newCommentP.parent(commentLog);
                     commentInput.value('');
-                    commentLog.elt.scrollTop = commentLog.elt.scrollHeight;
-                    loadComments(); // 새 댓글 추가 후 목록을 새로고침하여 순서를 맞춤
+                    loadComments();
                 } else { throw new Error('서버가 댓글 저장을 실패했습니다.'); }
             })
             .catch(error => {
