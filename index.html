@@ -3,231 +3,448 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REC</title>
-    <link rel="icon" href="favicon.png" type="image/png">
+    <title>KWT project</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
         body {
-            font-family: 굴림, serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-image: url('power-lines-4758957.svg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-color: #ce0018; /* 배경 이미지가 없는 경우를 대비한 대체 색상 */
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; background-color: #000;
+            font-family: 'DotGothic16', sans-serif; overflow: hidden; color: #eee;
         }
-        .container {
-            width: 90%;
-            max-width: 300px; /* 컨테이너 폭을 조금 넓혔습니다 */
+        canvas { border: 2px solid #ccc; display: block; margin-bottom: 20px; }
+        
+        .ui-container {
+            position: fixed; top: 20px; left: 20px; right: 20px;
+            display: flex;
+            align-items: center; z-index: 100;
+        }
+
+        .button-group {
+            margin-left: auto;
+        }
+
+        .game-info { color: #00ff00; font-size: 16px; text-shadow: 1px 1px #005500; }
+        .button-group button {
+            padding: 10px 15px; font-size: 16px; font-family: 'DotGothic16', sans-serif;
+            color: white; border: 2px solid #fff; border-radius: 5px;
+            cursor: pointer; margin-left: 10px; transition: background-color 0.2s, color 0.2s;
+        }
+        #instagramModeBtn { background-color: #C13584; border-color: #C13584; }
+        #twitterModeBtn { background-color: #1DA1F2; border-color: #1DA1F2; }
+        #commentModeBtn { background-color: #4CAF50; border-color: #4CAF50; }
+        #resetButton { background-color: #ff4500; border-color: #ff4500; }
+        .button-group button.active { background-color: #fff; color: #000; }
+
+        .comment-room {
+            display: none;
+            flex-direction: column;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; max-width: 500px;
+            height: 70%; max-height: 600px;
+            background-color: #1a1a1a;
+            border: 2px solid #ccc;
+            border-radius: 15px;
             padding: 20px;
-            border-radius: 8px;
-            background-color: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-        .input-fields-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        /* 작은 입력란들: 이름, 나이, 학년, 성별 */
-        #nameInput, #ageInput, .grade-area, .gender-area {
-            flex-basis: 15%;
-            flex-grow: 1;
-        }
-        /* 큰 입력란들: 링크, 소원 */
-        #linkInput, #answerInput {
-            width: 100%;
-            flex-grow: 1;
-        }
-        input, select {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 10px;
-            border-radius: 1px;
             box-sizing: border-box;
-            font-size: 10px;
-            height: 25px;
-            background-color: rgba(255, 255, 255, 0.8);
-            color: #000;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 200;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #ce0018;
-        }
-        .input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .comment-room h2 { margin-top: 0; text-align: center; color: #4CAF50; }
+        .comment-room textarea {
             width: 100%;
+            height: 100px;
+            background-color: #333;
+            border: 1px solid #777;
+            border-radius: 5px;
+            color: #eee;
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 16px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
         }
-        #answerInput {
-            flex-grow: 1;
-        }
-        button {
-            background-color: #ce0018;
-            color: white;
-            padding: 5px 7px;
-            border: none;
-            border-radius: 1px;
+        .comment-room button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 18px;
             cursor: pointer;
-            font-size: 11px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            border-radius: 5px;
         }
-        button:hover {
-            color: #000;
+        .comment-log {
+            flex-grow: 1;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #000;
+            border: 1px solid #555;
+            border-radius: 5px;
+            overflow-y: auto;
         }
-        .hidden {
-            display: none;
+        .comment-log p {
+            margin: 0 0 10px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            color: #ddd;
         }
-        /* 완료 메시지 스타일 */
-        #completionMessage {
-            color: #ce0018;
-            font-size: 7px;
-            text-align: center;
-        }
-        /* 로딩 스피너 스타일 */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ce0018;
-            border-radius: 50%;
-            width: 15px;
-            height: 15px;
-            animation: spin 1s linear infinite;
-            display: none;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* REC 문구 스타일 */
-       #rec-footer {
-        color: #000;
-        font-size: 30px;
-        font-family: 'Malgun Gothic', 'Apple Gothic', sans-serif; /* 굵은 고딕체로 변경 */
-        margin-top: 5px;
-        font-weight: bold;
-        width: 100%;
-        text-align: center;
-        }
+        .comment-log p:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="inputSection">
-            <div class="input-area">
-                <div class="input-fields-container">
-                    <input type="text" id="nameInput" placeholder="이름">
-                    <input type="number" id="ageInput" placeholder="나이" min="1" max="100">
-                    <div class="grade-area">
-                        <select id="gradeInput">
-                            <option value="">학년</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
-                    </div>
-                    <div class="gender-area">
-                        <select id="genderInput">
-                            <option value="">성별</option>
-                            <option value="男">男</option>
-                            <option value="女">女</option>
-                        </select>
-                    </div>
-                    <input type="text" id="linkInput" placeholder="학적사항링크">
-                    <div class="input-group">
-                        <input type="text" id="answerInput" placeholder="당신의 소원은...">
-                        <button id="submitButton" onclick="saveAnswer()">enter</button>
-                    </div>
-                </div>
-            </div>
+    <div class="ui-container">
+        <div class="game-info" id="gameInfo"></div>
+        <div class="button-group">
+            <button id="instagramModeBtn">Instagram</button>
+            <button id="twitterModeBtn">Twitter</button>
+            <button id="commentModeBtn">Comment</button>
+            <button id="resetButton">New Maze</button>
         </div>
-        
-        <div id="loadingMessage" class="loader"></div>
-        <div id="completionMessage" class="hidden">
-            <h1>접수되었습니다.</h1>
-        </div>
-        
-        <div id="rec-footer">R.E.C</div>
     </div>
+    
+    <div class="comment-room" id="commentRoom">
+        <h2>LEAVE A COMMENT</h2>
+        <textarea id="commentInput" placeholder="댓글을 입력하세요..."></textarea>
+        <button id="submitCommentBtn">Submit</button>
+        <div class="comment-log" id="commentLog">
+        </div>
+    </div>
+
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxImt0Ud5JrHpNXV3UDscqL4VmnZB3Ou3bTFspBAthPBQwFPZ1mDxOGOmuyM6E_Wz9B/exec";
+        // --- 전역 변수 설정 ---
+        let cols, rows; let cellSize = 35; let grid = []; let mazeGenerated = false;
+        const MAZE_COLS = 15; const MAZE_ROWS = 15;
 
-        document.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                saveAnswer();
-            }
-        });
+        let playerX, playerY, playerSize, playerMoveSpeed, playerAngle = 0;
+        let wallsToConsider = [];
+        let balls = []; let ballsPlaced = false; let gameClear = false;
+        let currentGameMode = 'instagram'; let score = 0;
 
-        async function saveAnswer() {
-            const submitButton = document.getElementById('submitButton');
-            submitButton.disabled = true;
+        let dangerBallsEatenCount = 0; const DANGER_BALL_LIMIT = 5;
 
-            const nameInput = document.getElementById('nameInput');
-            const ageInput = document.getElementById('ageInput');
-            const gradeInput = document.getElementById('gradeInput');
-            const genderInput = document.getElementById('genderInput');
-            const linkInput = document.getElementById('linkInput');
-            const answerInput = document.getElementById('answerInput');
-            const inputSection = document.getElementById('inputSection');
-            const loadingMessage = document.getElementById('loadingMessage');
-            const completionMessage = document.getElementById('completionMessage');
+        let timer = 60; const TIME_LIMIT = 60; let startTime;
+        let scoreGoal;
+        let timerStarted = false;
 
-            const nameText = nameInput.value.trim();
-            const ageText = ageInput.value.trim();
-            const gradeText = gradeInput.value;
-            const genderText = genderInput.value;
-            const linkText = linkInput.value.trim();
-            const answerText = answerInput.value.trim();
-            
-            if (answerText === '' || nameText === '' || ageText === '' || gradeText === '' || genderText === '') {
-                alert('이름, 나이, 학년, 성별, 소원을 모두 입력해주세요!');
-                submitButton.disabled = false;
-                return;
-            }
+        const instagramColors = [ '#833AB4', '#C13584', '#E1306C', '#FD1D1D', '#F56040', '#F77737', '#FCAF45', '#FFDC80' ];
+        const twitterColors = [ '#1DA1F2', '#14171A', '#657786', '#AAB8C2', '#E1E8ED', '#F5F8FA', '#FFAD1F' ];
+        const DANGER_COLOR = '#E0245E';
+        
+        let comments = [];
 
-            inputSection.classList.add('hidden');
-            loadingMessage.style.display = 'block';
+        // ‼️ [수정된 부분] Ball 클래스
+        class Ball {
+            constructor(i, j) {
+                this.i = i; this.j = j; 
+                this.x = i * cellSize + cellSize / 2; 
+                this.y = j * cellSize + cellSize / 2;
+                this.isDanger = false;
 
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'addWish',
-                        name: nameText,
-                        age: ageText,
-                        grade: gradeText,
-                        gender: genderText,
-                        link: linkText,
-                        wish: answerText
-                    })
-                });
-                const data = await response.json();
+                if (currentGameMode === 'instagram') {
+                    this.color = random(instagramColors); 
+                    this.size = cellSize * random(0.2, 0.6);
+                    this.points = floor(map(this.size, cellSize * 0.2, cellSize * 0.6, 1, 6));
+                } else { // 트위터 모드 로직
+                    const DANGER_BALL_MAX = 5;
+                    // 현재 화면에 있는 빨간 공의 개수를 계산
+                    let currentDangerBalls = balls.filter(b => b.isDanger).length;
 
-                if (data.result === 'success') {
-                    loadingMessage.style.display = 'none';
-                    completionMessage.classList.remove('hidden');
-                } else {
-                    alert('소원 저장에 실패했습니다.');
-                    loadingMessage.style.display = 'none';
-                    submitButton.disabled = false;
-                    inputSection.classList.remove('hidden');
+                    // 빨간 공이 5개 미만이고, 20% 확률에 당첨되면 빨간 공 생성
+                    if (currentDangerBalls < DANGER_BALL_MAX && random(1) < 0.2) {
+                        this.isDanger = true; 
+                        this.color = DANGER_COLOR; 
+                        this.points = 0;
+                    } else { // 그렇지 않으면 일반 공 생성
+                        this.isDanger = false; 
+                        this.color = random(twitterColors); 
+                        this.points = 1;
+                    }
+                    this.size = cellSize * 0.4;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('네트워크 오류가 발생했습니다.');
-                loadingMessage.style.display = 'none';
-                submitButton.disabled = false;
-                inputSection.classList.remove('hidden');
             }
+            show() { fill(this.color); noStroke(); ellipse(this.x, this.y, this.size, this.size); }
+        }
+        
+        function initializeGame() {
+            cols = MAZE_COLS; rows = MAZE_ROWS;
+            let canvasWidth = cols * cellSize; let canvasHeight = rows * cellSize;
+            resizeCanvas(canvasWidth, canvasHeight);
+            grid = []; 
+            balls = []; // balls 배열을 먼저 초기화해야 Ball 생성자에서 참조 가능
+            wallsToConsider = [];
+            mazeGenerated = false; ballsPlaced = false; gameClear = false;
+            score = 0; dangerBallsEatenCount = 0;
+            timer = TIME_LIMIT;
+            timerStarted = false;
+
+            let totalCells = cols * rows; let numBalls;
+            if (currentGameMode === 'instagram') { numBalls = floor(totalCells * 0.4); } else { numBalls = floor(totalCells * 0.2); }
+            for (let j = 0; j < rows; j++) { for (let i = 0; i < cols; i++) { grid.push(new Cell(i, j)); } }
+            let startCell = grid[0]; startCell.inMaze = true; startCell.addWallsToConsider();
+            let possibleLocations = grid.slice(1); shuffle(possibleLocations, true);
+            for (let i = 0; i < numBalls && i < possibleLocations.length; i++) {
+                let cell = possibleLocations[i]; balls.push(new Ball(cell.i, cell.j));
+            }
+            
+            if (currentGameMode === 'instagram') {
+                scoreGoal = 70;
+            }
+
+            playerX = 0.5 * cellSize; playerY = 0.5 * cellSize; playerSize = cellSize * 0.7; playerMoveSpeed = floor(cellSize / 8) || 1;
+            updateButtonUI();
+            loop();
+        }
+
+        function draw() {
+            background(0);
+            if (mazeGenerated) {
+                if (currentGameMode === 'instagram' && !gameClear) {
+                    if (timerStarted) {
+                        let elapsed = (millis() - startTime) / 1000;
+                        timer = TIME_LIMIT - elapsed;
+                    }
+                    
+                    if (timer <= 0) {
+                        gameClear = true;
+                        noLoop();
+
+                        if (score >= scoreGoal) {
+                            textAlign(CENTER, CENTER);
+                            fill(0, 255, 0);
+                            textSize(width / 10);
+                            let numChecks = floor(score / scoreGoal);
+                            let checkSymbols = '✔'.repeat(numChecks);
+                            text(`Success ${checkSymbols}`, width / 2, height / 2);
+                        } else {
+                            textAlign(CENTER, CENTER);
+                            fill(255, 0, 0);
+                            textSize(width / 8);
+                            text("GAME OVER", width / 2, height / 2);
+                            setTimeout(initializeGame, 2000);
+                        }
+                        return;
+                    }
+                }
+
+                for (let cell of grid) cell.show(); for (let ball of balls) ball.show();
+
+                if (!gameClear) {
+                    checkPlayerMovementAndCollision();
+                    for (let i = balls.length - 1; i >= 0; i--) {
+                        let d = dist(playerX, playerY, balls[i].x, balls[i].y);
+                        if (d < playerSize / 2 + balls[i].size / 2) {
+                            let collectedBall = balls.splice(i, 1)[0];
+                            if (currentGameMode === 'twitter') {
+                                if (collectedBall.isDanger) {
+                                    dangerBallsEatenCount++;
+                                    if (dangerBallsEatenCount >= DANGER_BALL_LIMIT) {
+                                        gameClear = true; textAlign(CENTER, CENTER); fill(DANGER_COLOR); textSize(width / 8);
+                                        text("GAME OVER", width / 2, height / 2);
+                                        noLoop(); setTimeout(initializeGame, 2000); return; 
+                                    }
+                                } else { score += collectedBall.points; spawnNewBalls(2); }
+                            } else { score += collectedBall.points; }
+                        }
+                    }
+                }
+
+                fill(255, 255, 0); noStroke(); push(); translate(playerX, playerY); rotate(playerAngle); arc(0, 0, playerSize, playerSize, PI / 6, TWO_PI - PI / 6, PIE); pop();
+                
+                if (currentGameMode === 'instagram') {
+                    let checkmarksString = '';
+                    if (scoreGoal > 0) {
+                        let numChecks = floor(score / scoreGoal);
+                        const blueCheck = `<span style="color: #007bff;"> ✔</span>`;
+                        checkmarksString = blueCheck.repeat(numChecks);
+                    }
+                    select('#gameInfo').html(`Score: ${score}${checkmarksString} | Goal: ${scoreGoal} | Time: ${max(0, floor(timer))}`);
+
+                    if (balls.length === 0 && !gameClear) {
+                        gameClear = true;
+                        textAlign(CENTER, CENTER); fill(0, 255, 0); textSize(width / 10);
+                        text("PERFECT CLEAR!", width / 2, height / 2);
+                        noLoop();
+                    }
+                } else {
+                    select('#gameInfo').html(`Score: ${score} | Red: ${dangerBallsEatenCount}/${DANGER_BALL_LIMIT}`);
+                }
+            } else {
+                let stepsPerFrame = 100;
+                for (let i = 0; i < stepsPerFrame; i++) { if (wallsToConsider.length > 0) { let randomIndex = floor(random(wallsToConsider.length)); let wall = wallsToConsider.splice(randomIndex, 1)[0]; let cell1 = wall.c1; let cell2 = wall.c2; if (cell1.inMaze !== cell2.inMaze) { removeWallsBetween(cell1, cell2, wall.d1, wall.d2); let newCell = cell1.inMaze ? cell2 : cell1; newCell.inMaze = true; newCell.addWallsToConsider(); } } else { mazeGenerated = true; break; } }
+                textAlign(CENTER, CENTER); fill(255); textSize(32); text("미로 생성 중...", width / 2, height / 2);
+            }
+        }
+        
+        function setGameMode(mode) {
+            const commentRoom = select('#commentRoom');
+            const gameCanvas = select('canvas');
+            const gameInfo = select('#gameInfo');
+
+            if (currentGameMode === mode) { return; }
+
+            if (mode === 'comment') {
+                currentGameMode = 'comment';
+                commentRoom.style('display', 'flex');
+                gameCanvas.style('display', 'none');
+                gameInfo.style('display', 'none');
+                noLoop();
+            } else { 
+                commentRoom.style('display', 'none');
+                gameCanvas.style('display', 'block');
+                gameInfo.style('display', 'block');
+                currentGameMode = mode;
+                initializeGame();
+            }
+            updateButtonUI();
+        }
+
+        function updateButtonUI() {
+            select('#instagramModeBtn').removeClass('active');
+            select('#twitterModeBtn').removeClass('active');
+            select('#commentModeBtn').removeClass('active');
+
+            if (currentGameMode === 'instagram') {
+                select('#instagramModeBtn').addClass('active');
+            } else if (currentGameMode === 'twitter') {
+                select('#twitterModeBtn').addClass('active');
+            } else if (currentGameMode === 'comment') {
+                select('#commentModeBtn').addClass('active');
+            }
+        }
+
+        function spawnNewBalls(count) { let ballPositions = new Set(balls.map(b => `${b.i},${b.j}`)); let emptyCells = grid.filter(cell => !ballPositions.has(`${cell.i},${cell.j}`)); shuffle(emptyCells, true); for (let i = 0; i < count && i < emptyCells.length; i++) { let cell = emptyCells[i]; balls.push(new Ball(cell.i, cell.j)); } }
+        
+        function setup() {
+            createCanvas(MAZE_COLS * cellSize, MAZE_ROWS * cellSize);
+            frameRate(60);
+            select('#instagramModeBtn').mousePressed(() => setGameMode('instagram'));
+            select('#twitterModeBtn').mousePressed(() => setGameMode('twitter'));
+            select('#commentModeBtn').mousePressed(() => setGameMode('comment'));
+            select('#resetButton').mousePressed(initializeGame);
+            select('#submitCommentBtn').mousePressed(submitComment);
+            initializeGame();
+        }
+        
+        function submitComment() {
+            const commentInput = select('#commentInput');
+            const commentLog = select('#commentLog');
+            const commentText = commentInput.value();
+
+            if (commentText.trim() === '') {
+                alert('Your comment...'); return;
+            }
+
+            const submitBtn = select('#submitCommentBtn');
+            submitBtn.html('Loading...');
+            submitBtn.attribute('disabled', '');
+
+            const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1nlGG_l902zlKLtVExr0Y7ZkZNqCCGaqjulc1T7G20Ua_jaVSnSu6K0mBo5o8yPlxgA/exec";
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ 'comment': commentText })
+            })
+            .then(response => {
+                if (!response.ok) { throw new Error('서버 응답 오류: ' + response.statusText); }
+                return response.json();
+            })
+            .then(data => {
+                if(data.result === 'success') {
+                    let newCommentP = createP(commentText);
+                    newCommentP.parent(commentLog);
+                    commentInput.value('');
+                    commentLog.elt.scrollTop = commentLog.elt.scrollHeight;
+                } else { throw new Error('서버가 댓글 저장을 실패했습니다.'); }
+            })
+            .catch(error => {
+                console.error('전송 실패:', error);
+                alert('댓글 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            })
+            .finally(() => {
+                submitBtn.html('Submit');
+                submitBtn.removeAttribute('disabled');
+            });
+        }
+
+        class Cell { 
+            constructor(i, j) { 
+                this.i = i; this.j = j; this.walls = [true, true, true, true]; this.inMaze = false; 
+            } 
+            index(i, j) { 
+                if (i < 0 || j < 0 || i > cols - 1 || j > rows - 1) return -1; return i + j * cols; 
+            } 
+            addWallsToConsider() { 
+                let neighbors = [{ cell: grid[this.index(this.i, this.j - 1)], dir: 0 }, { cell: grid[this.index(this.i + 1, this.j)], dir: 1 }, { cell: grid[this.index(this.i, this.j + 1)], dir: 2 }, { cell: grid[this.index(this.i - 1, this.j)], dir: 3 }]; 
+                for (let neighborInfo of neighbors) { 
+                    let neighbor = neighborInfo.cell; 
+                    if (neighbor && !neighbor.inMaze) { 
+                        let wallExists = false; let oppDir; 
+                        if (neighborInfo.dir === 0) oppDir = 2; else if (neighborInfo.dir === 1) oppDir = 3; else if (neighborInfo.dir === 2) oppDir = 0; else if (neighborInfo.dir === 3) oppDir = 1; 
+                        for (let w of wallsToConsider) { 
+                            if ((w.c1 === this && w.c2 === neighbor && w.d1 === neighborInfo.dir) || (w.c1 === neighbor && w.c2 === this && w.d1 === oppDir)) { 
+                                wallExists = true; break; 
+                            } 
+                        } 
+                        if (!wallExists) { 
+                            wallsToConsider.push({ c1: this, c2: neighbor, d1: neighborInfo.dir, d2: oppDir }); 
+                        } 
+                    } 
+                } 
+            } 
+            show() { 
+                let x = this.i * cellSize; let y = this.j * cellSize; 
+                stroke(150); strokeWeight(2); 
+                if (this.walls[0]) line(x, y, x + cellSize, y); 
+                if (this.walls[1]) line(x + cellSize, y, x + cellSize, y + cellSize); 
+                if (this.walls[2]) line(x + cellSize, y + cellSize, x, y + cellSize); 
+                if (this.walls[3]) line(x, y + cellSize, x, y); 
+            } 
+        }
+
+        function removeWallsBetween(cell1, cell2, dir1, dir2) { cell1.walls[dir1] = false; cell2.walls[dir2] = false; }
+        
+        function checkPlayerMovementAndCollision() { 
+            let dx = 0, dy = 0; 
+            if (keyIsDown(87)) { dy = -playerMoveSpeed; playerAngle = -HALF_PI; } 
+            if (keyIsDown(83)) { dy = playerMoveSpeed; playerAngle = HALF_PI; } 
+            if (keyIsDown(65)) { dx = -playerMoveSpeed; playerAngle = PI; } 
+            if (keyIsDown(68)) { dx = playerMoveSpeed; playerAngle = 0; } 
+            
+            if ((dx !== 0 || dy !== 0) && currentGameMode === 'instagram' && !timerStarted) {
+                startTime = millis();
+                timerStarted = true;
+            }
+
+            if (dx === 0 && dy === 0) return; 
+            
+            let currentCellI = floor(playerX / cellSize); 
+            let currentCellJ = floor(playerY / cellSize); 
+            let currentCell = grid[currentCellJ * cols + currentCellI]; 
+            if (!currentCell) return; 
+            
+            let nextPlayerX = playerX + dx, nextPlayerY = playerY + dy; 
+            let playerLeft = nextPlayerX - playerSize / 2, playerRight = nextPlayerX + playerSize / 2, playerTop = nextPlayerY - playerSize / 2, playerBottom = nextPlayerY + playerSize / 2; 
+            
+            if (dx > 0 && currentCell.walls[1] && playerRight > (currentCellI + 1) * cellSize) { 
+                playerX = (currentCellI + 1) * cellSize - playerSize / 2; 
+            } else if (dx < 0 && currentCell.walls[3] && playerLeft < currentCellI * cellSize) { 
+                playerX = currentCellI * cellSize + playerSize / 2; 
+            } else { 
+                playerX = nextPlayerX; 
+            } 
+            
+            if (dy > 0 && currentCell.walls[2] && playerBottom > (currentCellJ + 1) * cellSize) { 
+                playerY = (currentCellJ + 1) * cellSize - playerSize / 2; 
+            } else if (dy < 0 && currentCell.walls[0] && playerTop < currentCellJ * cellSize) { 
+                playerY = currentCellJ * cellSize + playerSize / 2; 
+            } else { 
+                playerY = nextPlayerY; 
+            } 
         }
     </script>
 </body>
