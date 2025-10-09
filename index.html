@@ -77,11 +77,6 @@
             color: white;
             border-radius: 5px;
         }
-      .commentInput{
-        margin: 20px 18px 15px 25px;
-        padding-bottom: 10px;
-        font-size: 13px;
-      }
         .comment-log {
             flex-grow: 1;
             margin-top: 20px;
@@ -92,12 +87,11 @@
             overflow-y: auto;
         }
         .comment-log p {
-    margin: 10px 15px 10px 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #444;
-    color: #ddd;
-    font-size: 13px; /* 👈 이 줄을 추가하세요 */
-}
+            margin: 0 0 10px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            color: #ddd;
+        }
         .comment-log p:last-child { border-bottom: none; }
     </style>
 </head>
@@ -114,7 +108,7 @@
     
     <div class="comment-room" id="commentRoom">
         <h2>LEAVE A COMMENT</h2>
-        <textarea id="commentInput" placeholder="Your comment..."></textarea>
+        <textarea id="commentInput" placeholder="댓글을 입력하세요..."></textarea>
         <button id="submitCommentBtn">Submit</button>
         <div class="comment-log" id="commentLog">
         </div>
@@ -140,8 +134,7 @@
         const twitterColors = [ '#1DA1F2', '#14171A', '#657786', '#AAB8C2', '#E1E8ED', '#F5F8FA', '#FFAD1F' ];
         const DANGER_COLOR = '#E0245E';
         
-        // ‼️ [수정된 부분] 요청하신 URL로 변경되었습니다.
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby_RCSnT3HybfZmWj0EozjjAVrI3T05aJx6c7ikwIVMuCGrxgEs4uqeaf-jPqR9H8r4yQ/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1nlGG_l902zlKLtVExr0Y7ZkZNqCCGaqjulc1T7G20Ua_jaVSnSu6K0mBo5o8yPlxgA/exec";
 
         class Ball {
             constructor(i, j) {
@@ -270,6 +263,7 @@
             }
         }
         
+        // ‼️ [수정된 부분] loadComments 함수 호출 추가
         function setGameMode(mode) {
             const commentRoom = select('#commentRoom');
             const gameCanvas = select('canvas');
@@ -283,7 +277,7 @@
                 gameCanvas.style('display', 'none');
                 gameInfo.style('display', 'none');
                 noLoop();
-                loadComments();
+                loadComments(); // 코멘트 탭을 열 때 댓글 불러오기
             } else { 
                 commentRoom.style('display', 'none');
                 gameCanvas.style('display', 'block');
@@ -321,9 +315,10 @@
             initializeGame();
         }
         
+        // ‼️ [추가된 부분] 댓글 불러오기 함수
         function loadComments() {
             const commentLog = select('#commentLog');
-            commentLog.html('loading...');
+            commentLog.html('불러오는 중...');
 
             fetch(WEB_APP_URL)
                 .then(response => response.json())
@@ -367,8 +362,12 @@
             })
             .then(data => {
                 if(data.result === 'success') {
+                    // 성공 시 화면에 바로 추가하고 다시 불러오기
+                    let newCommentP = createP(commentText);
+                    newCommentP.parent(commentLog);
                     commentInput.value('');
-                    loadComments();
+                    commentLog.elt.scrollTop = commentLog.elt.scrollHeight;
+                    loadComments(); // 새 댓글 추가 후 목록을 새로고침하여 순서를 맞춤
                 } else { throw new Error('서버가 댓글 저장을 실패했습니다.'); }
             })
             .catch(error => {
@@ -459,4 +458,3 @@
     </script>
 </body>
 </html>
-
