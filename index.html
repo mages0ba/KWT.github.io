@@ -134,34 +134,22 @@
         const twitterColors = [ '#1DA1F2', '#14171A', '#657786', '#AAB8C2', '#E1E8ED', '#F5F8FA', '#FFAD1F' ];
         const DANGER_COLOR = '#E0245E';
         
-        let comments = [];
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1nlGG_l902zlKLtVExr0Y7ZkZNqCCGaqjulc1T7G20Ua_jaVSnSu6K0mBo5o8yPlxgA/exec";
 
-        // ‼️ [수정된 부분] Ball 클래스
         class Ball {
             constructor(i, j) {
-                this.i = i; this.j = j; 
-                this.x = i * cellSize + cellSize / 2; 
-                this.y = j * cellSize + cellSize / 2;
+                this.i = i; this.j = j; this.x = i * cellSize + cellSize / 2; this.y = j * cellSize + cellSize / 2;
                 this.isDanger = false;
-
                 if (currentGameMode === 'instagram') {
-                    this.color = random(instagramColors); 
-                    this.size = cellSize * random(0.2, 0.6);
+                    this.color = random(instagramColors); this.size = cellSize * random(0.2, 0.6);
                     this.points = floor(map(this.size, cellSize * 0.2, cellSize * 0.6, 1, 6));
-                } else { // 트위터 모드 로직
+                } else {
                     const DANGER_BALL_MAX = 5;
-                    // 현재 화면에 있는 빨간 공의 개수를 계산
                     let currentDangerBalls = balls.filter(b => b.isDanger).length;
-
-                    // 빨간 공이 5개 미만이고, 20% 확률에 당첨되면 빨간 공 생성
                     if (currentDangerBalls < DANGER_BALL_MAX && random(1) < 0.2) {
-                        this.isDanger = true; 
-                        this.color = DANGER_COLOR; 
-                        this.points = 0;
-                    } else { // 그렇지 않으면 일반 공 생성
-                        this.isDanger = false; 
-                        this.color = random(twitterColors); 
-                        this.points = 1;
+                        this.isDanger = true; this.color = DANGER_COLOR; this.points = 0;
+                    } else {
+                        this.isDanger = false; this.color = random(twitterColors); this.points = 1;
                     }
                     this.size = cellSize * 0.4;
                 }
@@ -173,9 +161,7 @@
             cols = MAZE_COLS; rows = MAZE_ROWS;
             let canvasWidth = cols * cellSize; let canvasHeight = rows * cellSize;
             resizeCanvas(canvasWidth, canvasHeight);
-            grid = []; 
-            balls = []; // balls 배열을 먼저 초기화해야 Ball 생성자에서 참조 가능
-            wallsToConsider = [];
+            grid = []; balls = []; wallsToConsider = [];
             mazeGenerated = false; ballsPlaced = false; gameClear = false;
             score = 0; dangerBallsEatenCount = 0;
             timer = TIME_LIMIT;
@@ -207,11 +193,9 @@
                         let elapsed = (millis() - startTime) / 1000;
                         timer = TIME_LIMIT - elapsed;
                     }
-                    
                     if (timer <= 0) {
                         gameClear = true;
                         noLoop();
-
                         if (score >= scoreGoal) {
                             textAlign(CENTER, CENTER);
                             fill(0, 255, 0);
@@ -279,6 +263,7 @@
             }
         }
         
+        // ‼️ [수정된 부분] loadComments 함수 호출 추가
         function setGameMode(mode) {
             const commentRoom = select('#commentRoom');
             const gameCanvas = select('canvas');
@@ -292,6 +277,7 @@
                 gameCanvas.style('display', 'none');
                 gameInfo.style('display', 'none');
                 noLoop();
+                loadComments(); // 코멘트 탭을 열 때 댓글 불러오기
             } else { 
                 commentRoom.style('display', 'none');
                 gameCanvas.style('display', 'block');
@@ -329,20 +315,41 @@
             initializeGame();
         }
         
+        // ‼️ [추가된 부분] 댓글 불러오기 함수
+        function loadComments() {
+            const commentLog = select('#commentLog');
+            commentLog.html('불러오는 중...');
+
+            fetch(https://script.google.com/macros/s/AKfycbxNYBQtEffVH1fh7pHiUfuPWHuedDKKmBnaCAu1Hd1HIkRLKbIHv8paJZPC03UHI3Prmw/exec)
+                .then(response => response.json())
+                .then(data => {
+                    commentLog.html('');
+                    if (data.result === 'success' && data.comments) {
+                        data.comments.forEach(commentText => {
+                            let p = createP(commentText);
+                            p.parent(commentLog);
+                        });
+                        commentLog.elt.scrollTop = commentLog.elt.scrollHeight;
+                    }
+                })
+                .catch(error => {
+                    console.error("댓글 불러오기 실패:", error);
+                    commentLog.html('댓글을 불러올 수 없습니다.');
+                });
+        }
+        
         function submitComment() {
             const commentInput = select('#commentInput');
             const commentLog = select('#commentLog');
             const commentText = commentInput.value();
 
             if (commentText.trim() === '') {
-                alert('Your comment...'); return;
+                alert('댓글 내용을 입력해주세요.'); return;
             }
 
             const submitBtn = select('#submitCommentBtn');
-            submitBtn.html('Loading...');
+            submitBtn.html('전송 중...');
             submitBtn.attribute('disabled', '');
-
-            const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1nlGG_l902zlKLtVExr0Y7ZkZNqCCGaqjulc1T7G20Ua_jaVSnSu6K0mBo5o8yPlxgA/exec";
 
             fetch(WEB_APP_URL, {
                 method: 'POST',
@@ -355,10 +362,12 @@
             })
             .then(data => {
                 if(data.result === 'success') {
+                    // 성공 시 화면에 바로 추가하고 다시 불러오기
                     let newCommentP = createP(commentText);
                     newCommentP.parent(commentLog);
                     commentInput.value('');
                     commentLog.elt.scrollTop = commentLog.elt.scrollHeight;
+                    loadComments(); // 새 댓글 추가 후 목록을 새로고침하여 순서를 맞춤
                 } else { throw new Error('서버가 댓글 저장을 실패했습니다.'); }
             })
             .catch(error => {
