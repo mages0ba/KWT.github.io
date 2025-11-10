@@ -1,2 +1,0 @@
-# REC.github.io
-rec
